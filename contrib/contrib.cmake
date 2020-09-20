@@ -8,6 +8,6 @@ endif()
 
 # yojimbo
 add_library(yojimbo STATIC IMPORTED REQUIRED)
-set_target_properties(yojimbo PROPERTIES IMPORTED_LOCATION ${CMAKE_CURRENT_LIST_DIR}/yojimbo/lib/Release/yojimbo.lib)
-#set_target_properties(yojimbo PROPERTIES IMPORTED_LOCATION_Release ${CMAKE_CURRENT_LIST_DIR}/yojimbo/lib/Release/yojimbo.lib)
+set_target_properties(yojimbo PROPERTIES IMPORTED_LOCATION_DEBUG ${CMAKE_CURRENT_LIST_DIR}/yojimbo/lib/Debug/yojimbo.lib)
+set_target_properties(yojimbo PROPERTIES IMPORTED_LOCATION_RELEASE ${CMAKE_CURRENT_LIST_DIR}/yojimbo/lib/Release/yojimbo.lib)
 target_include_directories(yojimbo INTERFACE ${CMAKE_CURRENT_LIST_DIR}/yojimbo/include)

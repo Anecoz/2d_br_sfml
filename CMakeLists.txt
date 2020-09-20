@@ -5,3 +5,4 @@ set(CMAKE_CXX_STANDARD 17)
 
 include(contrib/contrib.cmake)
 add_subdirectory(app)
+add_subdirectory(server)

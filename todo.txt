@@ -1,0 +1,7 @@
+Server:
+  - Authoritative server. Run a simulation with a fixed timestep (tickrate). Take latest collected player data (commands), process, and send snapshot out to clients.
+  - Start with simple movement and shooting. Did shot hit? Send takeDamage and so on.
+
+Client:
+  - Sample input. Process commands on client and send to server. When server replies with snapshot, correct own version (immediately over time, lerping).
+  - Start with simple movement and shooting. 
