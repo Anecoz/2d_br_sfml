@@ -1,5 +1,6 @@
 #include "NetClient.h"
 
+#include <algorithm>
 #include <cstdint>
 #include <iostream>
 #include <yojimbo.h>
@@ -53,6 +54,13 @@ void NetClient::queuePositionUpdate(shared::Coordinate&& coord)
   _queuedCoordinate = std::move(coord);
 }
 
+void NetClient::drawNetPlayers(sf::RenderWindow& window)
+{
+  for (auto& p: _netPlayers) {
+    p.draw(window);
+  }
+}
+
 void NetClient::update(double dt)
 {
   _client->AdvanceTime(_client->GetTime() + dt);
@@ -79,27 +87,54 @@ void NetClient::processMessages()
   for (int i = 0; i < _config.numChannels; ++i) {
     yojimbo::Message* msg = _client->ReceiveMessage(i);
     while (msg != nullptr) {
-      processMessage(i, msg);
+      processMessage(msg);
       _client->ReleaseMessage(msg);
       msg = _client->ReceiveMessage(i);
     }
   }
 }
 
-void NetClient::processMessage(int clientIdx, yojimbo::Message* msg)
+void NetClient::processMessage(yojimbo::Message* msg)
 {
   switch (msg->GetType()) {
-    case (int)shared::GameMessageType::TEST:
-      processTestMessage(clientIdx, (shared::TestMessage*)msg);
+    case (int)shared::GameMessageType::TEST:      
+      break;
+    case (int)shared::GameMessageType::TEST2:
+      break;
+    case (int)shared::GameMessageType::DISCONNECT:
+      processDisconnect((shared::DisconnectMessage*)msg);
+      break;
+    case (int)shared::GameMessageType::POSITION:
+      processPositionUpdate((shared::PositionMessage*)msg);
       break;
     default:
       break;
   }
 }
 
-void NetClient::processTestMessage(int clientIdx, shared::TestMessage* msg)
+void NetClient::processDisconnect(shared::DisconnectMessage* msg)
 {
-  std::cout << "CLIENT: got a test message with data: " << msg->_data << std::endl;
+  int id = msg->_id;
+  auto it = std::find_if(_netPlayers.begin(), _netPlayers.end(), [id](const NetworkPlayer& player) { return player.id() == id; });
+  if (it != _netPlayers.end()) {
+    _netPlayers.erase(it);
+  }
+}
+
+void NetClient::processPositionUpdate(shared::PositionMessage* msg)
+{
+  int id = msg->_id;
+
+  // Do we have this player already?
+  auto it = std::find_if(_netPlayers.begin(), _netPlayers.end(), [id](const NetworkPlayer& player) { return player.id() == id; });
+  if (it != _netPlayers.end()) {
+    it->setPosition({msg->_x, msg->_y });
+  }
+  else {
+    // Doesn't exist, create it
+    _netPlayers.emplace_back(id);
+    _netPlayers.back().setPosition({msg->_x, msg->_y});
+  }
 }
 
 }

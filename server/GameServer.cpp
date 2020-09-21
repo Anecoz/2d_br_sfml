@@ -122,6 +122,7 @@ Client* GameServer::getClient(int id)
 
 void GameServer::processMessages()
 {
+  // Retrieve latest snapshots
   for (int i = 0; i < MAX_PLAYERS; ++i) {
     if (_yojimboServer->IsClientConnected(i)) {
       for (int j = 0; j < _config.numChannels; ++j) {
@@ -132,6 +133,32 @@ void GameServer::processMessages()
           msg = _yojimboServer->ReceiveMessage(i, j);
         }
       }
+    }
+  }
+
+  // Send latest snapshots to connected clients.
+  for (auto& sender: _clients) {
+    for (auto& c: _clients) {
+      if (c.id() == sender.id()) continue;
+      shared::PositionMessage* msg = (shared::PositionMessage*)_yojimboServer->CreateMessage(c.id(), (int)shared::GameMessageType::POSITION);
+      msg->_id = sender.id();
+      msg->_x = sender.getCoord()._x;
+      msg->_y = sender.getCoord()._y;
+      _yojimboServer->SendMessage(c.id(), (int)shared::GameChannel::UNRELIABLE, msg);
+    }
+  }
+
+  // Send any pending disconnects to players
+  std::vector<int> localDisconnects;
+  {
+    std::unique_lock<std::mutex> lock(_discQMtx);
+    std::swap(_queuedDisconnects, localDisconnects);
+  }
+  for (auto& idx: localDisconnects) {
+    for (auto& c: _clients) {
+      shared::DisconnectMessage* msg = (shared::DisconnectMessage*)_yojimboServer->CreateMessage(c.id(), (int)shared::GameMessageType::DISCONNECT);
+      msg->_id = idx;
+      _yojimboServer->SendMessage(c.id(), (int)shared::GameChannel::RELIABLE, msg);
     }
   }
 }
@@ -167,7 +194,7 @@ void GameServer::processPositionMessage(int clientIdx, shared::PositionMessage* 
   }
 
   client->setCoord({msg->_x, msg->_y});
-  std::cout << "Updated coord of client " << std::to_string(clientIdx) << " to " << std::to_string(msg->_x) << ", " << std::to_string(msg->_y) << std::endl;
+  //std::cout << "Updated coord of client " << std::to_string(clientIdx) << " to " << std::to_string(msg->_x) << ", " << std::to_string(msg->_y) << std::endl;
 }
 
 void GameServer::processTest2Message(int clientIdx, shared::Test2Message* msg)
@@ -201,6 +228,10 @@ void GameServer::clientDisconnected(int idx)
   if (!erased) {
     std::cerr << "SERVER: A client disconnected " << "(" << idx << ") " << ", but we don't have a client on that index." << std::endl;
     return;
+  }
+  else {
+    std::unique_lock<std::mutex> lock(_discQMtx);
+    _queuedDisconnects.emplace_back(idx);
   }
 
   std::cout << "Client " << idx << " disconnected" << std::endl;

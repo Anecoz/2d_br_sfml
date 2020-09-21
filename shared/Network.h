@@ -7,6 +7,7 @@ namespace shared {
 enum class GameMessageType {
   TEST,
   TEST2,
+  DISCONNECT,
   POSITION,
   COUNT
 };
@@ -70,15 +71,36 @@ public:
   PositionMessage()
     : _x(0.0)
     , _y(0.0)
+    , _id(-1)
   {}
 
   double _x;
   double _y;
+  int _id;
 
   template <typename Stream>
   bool Serialize(Stream& stream) {
     serialize_double(stream, _x);
     serialize_double(stream, _y);
+    serialize_int(stream, _id, -1, 64);
+    return true;
+  }
+
+  YOJIMBO_VIRTUAL_SERIALIZE_FUNCTIONS();
+};
+
+class DisconnectMessage : public yojimbo::Message
+{
+public:
+  DisconnectMessage()
+    : _id(-1)
+  {}
+
+  int _id;
+
+  template <typename Stream>
+  bool Serialize(Stream& stream) {
+    serialize_int(stream, _id, -1, 64);
     return true;
   }
 
@@ -89,6 +111,7 @@ YOJIMBO_MESSAGE_FACTORY_START(GameMessageFactory, (int)shared::GameMessageType::
 YOJIMBO_DECLARE_MESSAGE_TYPE((int)shared::GameMessageType::TEST, shared::TestMessage);
 YOJIMBO_DECLARE_MESSAGE_TYPE((int)shared::GameMessageType::TEST2, shared::Test2Message);
 YOJIMBO_DECLARE_MESSAGE_TYPE((int)shared::GameMessageType::POSITION, shared::PositionMessage);
+YOJIMBO_DECLARE_MESSAGE_TYPE((int)shared::GameMessageType::DISCONNECT, shared::DisconnectMessage);
 YOJIMBO_MESSAGE_FACTORY_FINISH();
 
 }

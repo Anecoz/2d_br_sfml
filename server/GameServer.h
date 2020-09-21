@@ -5,6 +5,7 @@
 #include "Network.h"
 
 #include <cstdint>
+#include <mutex>
 #include <string>
 #include <vector>
 
@@ -38,6 +39,9 @@ private:
   Client* getClient(int id);
 
   std::vector<Client> _clients;
+
+  std::mutex _discQMtx;
+  std::vector<int> _queuedDisconnects;
 
   bool _running;
   GameAdapter* _adapter;

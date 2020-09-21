@@ -38,6 +38,7 @@ int main()
     window.clear(sf::Color::Black);
 
     player.draw(window);
+    client.drawNetPlayers(window);
 
     window.display();
   }
