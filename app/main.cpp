@@ -1,15 +1,16 @@
 #include <iostream>
 #include <SFML/Window.hpp>
+#include <SFML/Graphics.hpp>
 
 #include "net/NetClient.h"
+#include "Player.h"
 
 int main()
 {
-  std::cout << "Hello world!" << std::endl;
-
-  sf::Window window(sf::VideoMode(1280, 720), "2D BR");
+  sf::RenderWindow window(sf::VideoMode(1280, 720), "2D BR");
 
   net::NetClient client("127.0.0.1:6000");
+  Player player;
 
   sf::Clock clock;
   while (window.isOpen()) {
@@ -20,20 +21,25 @@ int main()
         window.close();
       }
 
-      if (event.type == sf::Event::KeyPressed) {
-        if (event.key.code == sf::Keyboard::Space) {
-          client.hax();
-        }
+      if (event.type == sf::Event::KeyPressed || event.type == sf::Event::KeyReleased) {
+        player.handleKeyEvent(event);
       }
     }
 
     // Update the client
     sf::Time elapsed = clock.restart();
+    player.update(elapsed.asSeconds());
+    client.queuePositionUpdate(player.pos());
     client.update(elapsed.asSeconds());
 
     // Update snapshot of world
 
     // Render world
+    window.clear(sf::Color::Black);
+
+    player.draw(window);
+
+    window.display();
   }
 
   return 0;

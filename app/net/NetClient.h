@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Network.h"
+#include "Coordinate.h"
 
 #include <string>
 
@@ -17,8 +18,7 @@ public:
   ~NetClient();
 
   void update(double dt);
-
-  void hax();
+  void queuePositionUpdate(shared::Coordinate&& coord);
 
 private:
   void processMessages();
@@ -28,6 +28,8 @@ private:
   yojimbo::Client* _client;
   ClientAdapter* _adapter;
   shared::GameConnectionConfig _config;
+  bool _coordinateQueued;
+  shared::Coordinate _queuedCoordinate;
 };
 
 }

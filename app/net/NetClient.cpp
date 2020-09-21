@@ -6,11 +6,7 @@
 
 namespace net {
 
-// ------ Yojimbo adapter and factories ---------
-YOJIMBO_MESSAGE_FACTORY_START(GameMessageFactory, (int)shared::GameMessageType::COUNT);
-YOJIMBO_DECLARE_MESSAGE_TYPE((int)shared::GameMessageType::TEST, shared::TestMessage);
-YOJIMBO_MESSAGE_FACTORY_FINISH();
-
+// ------ Yojimbo adapter ---------
 class ClientAdapter : public yojimbo::Adapter
 {
 public:
@@ -19,7 +15,7 @@ public:
 
   yojimbo::MessageFactory* CreateMessageFactory(yojimbo::Allocator& allocator) override
   {
-    return YOJIMBO_NEW(allocator, GameMessageFactory, allocator);
+    return YOJIMBO_NEW(allocator, shared::GameMessageFactory, allocator);
   }
 };
 // ------ end yojimbo ---------
@@ -29,6 +25,7 @@ static const std::uint8_t DEFAULT_PRIVATE_KEY[yojimbo::KeyBytes] = { 0 };
 NetClient::NetClient(std::string serverAddr)
   : _client(nullptr)
   , _adapter(new ClientAdapter())
+  , _coordinateQueued(false)
 {
   InitializeYojimbo();
 
@@ -50,11 +47,10 @@ NetClient::~NetClient()
   ShutdownYojimbo();
 }
 
-void NetClient::hax()
+void NetClient::queuePositionUpdate(shared::Coordinate&& coord)
 {
-  shared::TestMessage* msg = (shared::TestMessage*)_client->CreateMessage((int)shared::GameMessageType::TEST);
-  msg->_data = 69;
-  _client->SendMessage((int)shared::GameChannel::RELIABLE, msg);
+  _coordinateQueued = true;
+  _queuedCoordinate = std::move(coord);
 }
 
 void NetClient::update(double dt)
@@ -64,6 +60,15 @@ void NetClient::update(double dt)
 
   if (_client->IsConnected()) {
     processMessages();
+
+    // Send queued up packages here!
+    if (_coordinateQueued) {
+      _coordinateQueued = false;
+      shared::PositionMessage* msg = (shared::PositionMessage*)_client->CreateMessage((int)shared::GameMessageType::POSITION);
+      msg->_x = _queuedCoordinate._x;
+      msg->_y = _queuedCoordinate._y;
+      _client->SendMessage((int)shared::GameChannel::UNRELIABLE, msg);
+    }
   }
 
   _client->SendPackets();
