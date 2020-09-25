@@ -6,16 +6,18 @@ namespace server {
 
 Client::Client(int id)
   : _id(id)
-{}
-
-void Client::setCoord(shared::Coordinate&& coord)
 {
-  _coord = std::move(coord);
+  _state._health = 100;
 }
 
-const shared::Coordinate& Client::getCoord() const
+void Client::setState(shared::PlayerState state)
 {
-  return _coord;
+  _state = state;
+}
+
+shared::PlayerState Client::state() const
+{
+  return _state;
 }
 
 }

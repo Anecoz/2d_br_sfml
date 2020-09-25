@@ -32,9 +32,7 @@ private:
   void processMessages();
   void processMessage(int clientIdx, yojimbo::Message*);
 
-  void processTestMessage(int clientIdx, shared::TestMessage*);
-  void processTest2Message(int clientIdx, shared::Test2Message*);
-  void processPositionMessage(int clientIdx, shared::PositionMessage*);
+  void processStateMessage(int clientIdx, shared::PlayerStateMessage*);
 
   Client* getClient(int id);
 
@@ -42,6 +40,9 @@ private:
 
   std::mutex _discQMtx;
   std::vector<int> _queuedDisconnects;
+
+  std::mutex _welcomeMtx;
+  std::vector<int> _queuedWelcome;
 
   bool _running;
   GameAdapter* _adapter;

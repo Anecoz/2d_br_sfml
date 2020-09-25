@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Coordinate.h"
+#include "PlayerState.h"
 
 #include <SFML/Graphics.hpp>
 
@@ -13,14 +13,15 @@ public:
   NetworkPlayer(int id);
   ~NetworkPlayer() = default;
 
-  void setPosition(shared::Coordinate&& pos);
+  void setState(shared::PlayerState state);
+
   void draw(sf::RenderWindow& window);
 
   int id() const { return _id; }
 
 private:
   int _id;
-  shared::Coordinate _position;
+  shared::PlayerState _state;
   sf::RectangleShape _shape;
 };
 

@@ -1,5 +1,7 @@
 #include "NetworkPlayer.h"
 
+#include <iostream>
+
 namespace net {
 
 NetworkPlayer::NetworkPlayer()
@@ -16,10 +18,10 @@ NetworkPlayer::NetworkPlayer(int id)
   _shape.setFillColor(sf::Color::Yellow);
 }
 
-void NetworkPlayer::setPosition(shared::Coordinate&& pos)
+void NetworkPlayer::setState(shared::PlayerState state)
 {
-  _position = std::move(pos);
-  _shape.setPosition(sf::Vector2f((float)_position._x, (float)_position._y));
+  _state = state;
+  _shape.setPosition({(float)_state._coord._x, (float)_state._coord._y});
 }
 
 void NetworkPlayer::draw(sf::RenderWindow& window)

@@ -26,7 +26,9 @@ static const std::uint8_t DEFAULT_PRIVATE_KEY[yojimbo::KeyBytes] = { 0 };
 NetClient::NetClient(std::string serverAddr)
   : _client(nullptr)
   , _adapter(new ClientAdapter())
-  , _coordinateQueued(false)
+  , _stateQueued(false)
+  , _localStateQueued(false)
+  , _localId(-1)
 {
   InitializeYojimbo();
 
@@ -48,10 +50,10 @@ NetClient::~NetClient()
   ShutdownYojimbo();
 }
 
-void NetClient::queuePositionUpdate(shared::Coordinate&& coord)
+void NetClient::queueStateUpdate(shared::PlayerState state)
 {
-  _coordinateQueued = true;
-  _queuedCoordinate = std::move(coord);
+  _stateQueued = true;
+  _queuedState = state;
 }
 
 void NetClient::drawNetPlayers(sf::RenderWindow& window)
@@ -70,16 +72,21 @@ void NetClient::update(double dt)
     processMessages();
 
     // Send queued up packages here!
-    if (_coordinateQueued) {
-      _coordinateQueued = false;
-      shared::PositionMessage* msg = (shared::PositionMessage*)_client->CreateMessage((int)shared::GameMessageType::POSITION);
-      msg->_x = _queuedCoordinate._x;
-      msg->_y = _queuedCoordinate._y;
+    if (_stateQueued) {
+      _stateQueued = false;
+      shared::PlayerStateMessage* msg = (shared::PlayerStateMessage*)_client->CreateMessage((int)shared::GameMessageType::PLAYER_STATE);
+      msg->_state = _queuedState;
       _client->SendMessage((int)shared::GameChannel::UNRELIABLE, msg);
     }
   }
 
   _client->SendPackets();
+}
+
+shared::PlayerState NetClient::getUpdatedLocalState()
+{
+  _localStateQueued = false;
+  return _queuedLocalState;
 }
 
 void NetClient::processMessages()
@@ -97,15 +104,14 @@ void NetClient::processMessages()
 void NetClient::processMessage(yojimbo::Message* msg)
 {
   switch (msg->GetType()) {
-    case (int)shared::GameMessageType::TEST:      
-      break;
-    case (int)shared::GameMessageType::TEST2:
-      break;
     case (int)shared::GameMessageType::DISCONNECT:
       processDisconnect((shared::DisconnectMessage*)msg);
       break;
-    case (int)shared::GameMessageType::POSITION:
-      processPositionUpdate((shared::PositionMessage*)msg);
+    case (int)shared::GameMessageType::WELCOME:
+      processWelcome((shared::WelcomeMessage*)msg);
+      break;
+    case (int)shared::GameMessageType::PLAYER_STATE:
+      processStateUpdate((shared::PlayerStateMessage*)msg);
       break;
     default:
       break;
@@ -121,19 +127,37 @@ void NetClient::processDisconnect(shared::DisconnectMessage* msg)
   }
 }
 
-void NetClient::processPositionUpdate(shared::PositionMessage* msg)
+void NetClient::processWelcome(shared::WelcomeMessage* msg)
+{
+  std::cout << "Received welcome, our id is: " << std::to_string(msg->_id) << std::endl;
+  _localId = msg->_id;
+}
+
+void NetClient::processStateUpdate(shared::PlayerStateMessage* msg)
 {
   int id = msg->_id;
 
+  // Are we updating our own local player?
+  if (id == _localId) {
+    _localStateQueued = true;
+    _queuedLocalState = msg->_state;
+    return;
+  }
+
   // Do we have this player already?
   auto it = std::find_if(_netPlayers.begin(), _netPlayers.end(), [id](const NetworkPlayer& player) { return player.id() == id; });
+  net::NetworkPlayer* player = nullptr;
   if (it != _netPlayers.end()) {
-    it->setPosition({msg->_x, msg->_y });
+    player = &(*it);
   }
   else {
     // Doesn't exist, create it
     _netPlayers.emplace_back(id);
-    _netPlayers.back().setPosition({msg->_x, msg->_y});
+    player = &_netPlayers.back();
+  }
+
+  if (player != nullptr) {
+    player->setState(msg->_state);
   }
 }
 

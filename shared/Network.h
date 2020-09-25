@@ -1,14 +1,15 @@
 #pragma once
 
+#include "PlayerState.h"
+
 #include <yojimbo.h>
 
 namespace shared {
 
 enum class GameMessageType {
-  TEST,
-  TEST2,
+  WELCOME,
   DISCONNECT,
-  POSITION,
+  PLAYER_STATE,
   COUNT
 };
 
@@ -29,60 +30,40 @@ struct GameConnectionConfig : yojimbo::ClientServerConfig
   }
 };
 
-class TestMessage : public yojimbo::Message
+class WelcomeMessage : public yojimbo::Message
 {
 public:
-  TestMessage()
-    : _data(0)
+  WelcomeMessage()
+    : _id(-1)
   {}
 
-  int _data;
-
-  template <typename Stream>
-  bool Serialize(Stream& stream) {
-    serialize_int(stream, _data, 0, 512);
-    return true;
-  }
-
-  YOJIMBO_VIRTUAL_SERIALIZE_FUNCTIONS();
-};
-
-class Test2Message : public yojimbo::Message
-{
-public:
-  Test2Message()
-    : _data(0)
-  {}
-
-  int _data;
-
-  template <typename Stream>
-  bool Serialize(Stream& stream) {
-    serialize_int(stream, _data, 0, 512);
-    return true;
-  }
-
-  YOJIMBO_VIRTUAL_SERIALIZE_FUNCTIONS();
-};
-
-class PositionMessage : public yojimbo::Message
-{
-public:
-  PositionMessage()
-    : _x(0.0)
-    , _y(0.0)
-    , _id(-1)
-  {}
-
-  double _x;
-  double _y;
   int _id;
 
   template <typename Stream>
   bool Serialize(Stream& stream) {
-    serialize_double(stream, _x);
-    serialize_double(stream, _y);
     serialize_int(stream, _id, -1, 64);
+    return true;
+  }
+
+  YOJIMBO_VIRTUAL_SERIALIZE_FUNCTIONS();
+};
+
+class PlayerStateMessage : public yojimbo::Message
+{
+public:
+  PlayerStateMessage()
+    : _id(-1)
+  {}
+
+  int _id;
+  shared::PlayerState _state;
+
+  template <typename Stream>
+  bool Serialize(Stream& stream) {
+    serialize_double(stream, _state._coord._x);
+    serialize_double(stream, _state._coord._y);
+    serialize_int(stream, _id, -1, 64);
+    serialize_int(stream, _state._health, -1, 100);
     return true;
   }
 
@@ -108,9 +89,8 @@ public:
 };
 
 YOJIMBO_MESSAGE_FACTORY_START(GameMessageFactory, (int)shared::GameMessageType::COUNT);
-YOJIMBO_DECLARE_MESSAGE_TYPE((int)shared::GameMessageType::TEST, shared::TestMessage);
-YOJIMBO_DECLARE_MESSAGE_TYPE((int)shared::GameMessageType::TEST2, shared::Test2Message);
-YOJIMBO_DECLARE_MESSAGE_TYPE((int)shared::GameMessageType::POSITION, shared::PositionMessage);
+YOJIMBO_DECLARE_MESSAGE_TYPE((int)shared::GameMessageType::WELCOME, shared::WelcomeMessage);
+YOJIMBO_DECLARE_MESSAGE_TYPE((int)shared::GameMessageType::PLAYER_STATE, shared::PlayerStateMessage);
 YOJIMBO_DECLARE_MESSAGE_TYPE((int)shared::GameMessageType::DISCONNECT, shared::DisconnectMessage);
 YOJIMBO_MESSAGE_FACTORY_FINISH();
 

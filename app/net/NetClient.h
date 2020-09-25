@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Network.h"
-#include "Coordinate.h"
+#include "PlayerState.h"
 #include "NetworkPlayer.h"
 
 #include <string>
@@ -20,23 +20,32 @@ public:
   ~NetClient();
 
   void update(double dt);
-  void queuePositionUpdate(shared::Coordinate&& coord);
+  void queueStateUpdate(shared::PlayerState state);
+
+  bool localStateUpdated() { return _localStateQueued; }
+  shared::PlayerState getUpdatedLocalState();
 
   void drawNetPlayers(sf::RenderWindow& window);
 
 private:
   void processMessages();
   void processMessage(yojimbo::Message*);
-  void processPositionUpdate(shared::PositionMessage*);
+  void processStateUpdate(shared::PlayerStateMessage*);
   void processDisconnect(shared::DisconnectMessage*);
+  void processWelcome(shared::WelcomeMessage*);
 
   yojimbo::Client* _client;
   ClientAdapter* _adapter;
   shared::GameConnectionConfig _config;
-  bool _coordinateQueued;
-  shared::Coordinate _queuedCoordinate;
+
+  bool _stateQueued;
+  shared::PlayerState _queuedState;
+
+  bool _localStateQueued;
+  shared::PlayerState _queuedLocalState;
 
   std::vector<NetworkPlayer> _netPlayers;
+  int _localId;
 };
 
 }

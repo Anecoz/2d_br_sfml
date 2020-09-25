@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Coordinate.h"
+#include "PlayerState.h"
 #include "Velocity.h"
 
 #include <SFML/Graphics.hpp>
@@ -15,12 +15,14 @@ public:
   void update(double dt);
   void draw(sf::RenderWindow& window);
 
-  shared::Coordinate pos() { return _position; }
+  void updateState(shared::PlayerState state);
+  shared::PlayerState state() { return _state; }
 
 private:
   const double _speed = 100.0;
 
   shared::Velocity _velocity;
-  shared::Coordinate _position;
+  shared::PlayerState _state;
   sf::RectangleShape _shape;
+  sf::Text _healthText;
 };

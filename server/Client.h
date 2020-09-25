@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Coordinate.h"
+#include "PlayerState.h"
 
 namespace server {
 
@@ -15,13 +15,14 @@ public:
     return _id != -1;
   }
 
-  void setCoord(shared::Coordinate&& coord);
-  const shared::Coordinate& getCoord() const;
-  int id() {  return _id; }
+  void setState(shared::PlayerState state);
+  shared::PlayerState state() const;
+
+  int id() const { return _id; }
 
 private:
   int _id;
-  shared::Coordinate _coord;  
+  shared::PlayerState _state;
 };
 
 }

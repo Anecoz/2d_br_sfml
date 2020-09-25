@@ -81,7 +81,7 @@ bool GameServer::start()
 
 void GameServer::run()
 {
-  double fixedDt = 1.0 / 128.0;
+  double fixedDt = 1.0 / 60.0;
   while (_running) {
     double currentTime = yojimbo_time();
     if (_time <= currentTime) {
@@ -139,12 +139,28 @@ void GameServer::processMessages()
   // Send latest snapshots to connected clients.
   for (auto& sender: _clients) {
     for (auto& c: _clients) {
-      if (c.id() == sender.id()) continue;
-      shared::PositionMessage* msg = (shared::PositionMessage*)_yojimboServer->CreateMessage(c.id(), (int)shared::GameMessageType::POSITION);
+      // We need to send the state update to the own player aswell.
+      shared::PlayerStateMessage* msg = (shared::PlayerStateMessage*)_yojimboServer->CreateMessage(c.id(), (int)shared::GameMessageType::PLAYER_STATE);
       msg->_id = sender.id();
-      msg->_x = sender.getCoord()._x;
-      msg->_y = sender.getCoord()._y;
+      msg->_state = sender.state();
       _yojimboServer->SendMessage(c.id(), (int)shared::GameChannel::UNRELIABLE, msg);
+    }
+  }
+
+  // Send any pending welcomes to players
+  std::vector<int> localWelcome;
+  {
+    std::unique_lock<std::mutex> lock(_welcomeMtx);
+    std::swap(_queuedWelcome, localWelcome);
+  }
+  for (auto& idx: localWelcome) {
+    for (auto& c: _clients) {
+      if (c.id() == idx) {
+        shared::WelcomeMessage* msg = (shared::WelcomeMessage*)_yojimboServer->CreateMessage(idx, (int)shared::GameMessageType::WELCOME);
+        msg->_id = idx;
+        _yojimboServer->SendMessage(idx, (int)shared::GameChannel::RELIABLE, msg);
+        break;
+      }      
     }
   }
 
@@ -166,40 +182,26 @@ void GameServer::processMessages()
 void GameServer::processMessage(int clientIdx, yojimbo::Message* msg)
 {
   switch (msg->GetType()) {
-    case (int)shared::GameMessageType::TEST:
-      processTestMessage(clientIdx, (shared::TestMessage*)msg);
-      break;
-    case (int)shared::GameMessageType::TEST2:
-      processTest2Message(clientIdx, (shared::Test2Message*)msg);
-      break;
-    case (int)shared::GameMessageType::POSITION:
-      processPositionMessage(clientIdx, (shared::PositionMessage*)msg);
+    case (int)shared::GameMessageType::PLAYER_STATE:
+      processStateMessage(clientIdx, (shared::PlayerStateMessage*)msg);
       break;
     default:
       break;
   }
 }
 
-void GameServer::processTestMessage(int clientIdx, shared::TestMessage* msg)
-{
-  std::cout << "SERVER: got a test message with data: " << msg->_data << std::endl;
-}
-
-void GameServer::processPositionMessage(int clientIdx, shared::PositionMessage* msg)
+void GameServer::processStateMessage(int clientIdx, shared::PlayerStateMessage* msg)
 {
   auto client = getClient(clientIdx);
   if (!client) {
-    std::cerr << "Received position update for client that doesn't exist." << std::endl;
+    std::cerr << "Received state update for client that doesn't exist." << std::endl;
     return;
   }
 
-  client->setCoord({msg->_x, msg->_y});
-  //std::cout << "Updated coord of client " << std::to_string(clientIdx) << " to " << std::to_string(msg->_x) << ", " << std::to_string(msg->_y) << std::endl;
-}
-
-void GameServer::processTest2Message(int clientIdx, shared::Test2Message* msg)
-{
-  std::cout << "SERVER: got a test2 message with data: " << msg->_data << std::endl;
+  // We have authority over stuff like health, so ignore that.
+  auto state = client->state();
+  msg->_state._health = state._health;
+  client->setState(msg->_state);
 }
 
 void GameServer::clientConnected(int idx)
@@ -212,6 +214,9 @@ void GameServer::clientConnected(int idx)
   _clients.emplace_back(idx);
   std::cout << "Client " << idx << " connected" << std::endl;
   std::cout << "We now have " << std::to_string(_clients.size()) << " client(s)." << std::endl;
+
+  std::unique_lock<std::mutex> lock(_welcomeMtx);
+  _queuedWelcome.emplace_back(idx);
 }
 
 void GameServer::clientDisconnected(int idx)
