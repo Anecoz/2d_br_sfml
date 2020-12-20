@@ -18,11 +18,15 @@ public:
   void setState(shared::PlayerState state);
   shared::PlayerState state() const;
 
+  void setInputState(shared::InputState state);
+  shared::InputState inputState() const;
+
   int id() const { return _id; }
 
 private:
   int _id;
   shared::PlayerState _state;
+  shared::InputState _inputState;
 };
 
 }

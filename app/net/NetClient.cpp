@@ -27,6 +27,7 @@ NetClient::NetClient(std::string serverAddr)
   : _client(nullptr)
   , _adapter(new ClientAdapter())
   , _stateQueued(false)
+  , _inputQueued(false)
   , _localStateQueued(false)
   , _localId(-1)
 {
@@ -56,6 +57,12 @@ void NetClient::queueStateUpdate(shared::PlayerState state)
   _queuedState = state;
 }
 
+void NetClient::queueInputUpdate(shared::InputState state)
+{
+  _inputQueued = true;
+  _queuedInputState = state;
+}
+
 void NetClient::drawNetPlayers(sf::RenderWindow& window)
 {
   for (auto& p: _netPlayers) {
@@ -74,9 +81,15 @@ void NetClient::update(double dt)
     // Send queued up packages here!
     if (_stateQueued) {
       _stateQueued = false;
-      shared::PlayerStateMessage* msg = (shared::PlayerStateMessage*)_client->CreateMessage((int)shared::GameMessageType::PLAYER_STATE);
-      msg->_state = _queuedState;
-      _client->SendMessage((int)shared::GameChannel::UNRELIABLE, msg);
+      shared::PlayerStateMessage* stateMsg = (shared::PlayerStateMessage*)_client->CreateMessage((int)shared::GameMessageType::PLAYER_STATE);
+      stateMsg->_state = _queuedState;
+      _client->SendMessage((int)shared::GameChannel::UNRELIABLE, stateMsg);
+    }
+    if (_inputQueued) {
+      _inputQueued = false;
+      shared::InputStateMessage* inputMsg = (shared::InputStateMessage*)_client->CreateMessage((int)shared::GameMessageType::INPUT_STATE);
+      inputMsg->_state = _queuedInputState;
+      _client->SendMessage((int)shared::GameChannel::RELIABLE, inputMsg);
     }
   }
 

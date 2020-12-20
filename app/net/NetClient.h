@@ -21,6 +21,7 @@ public:
 
   void update(double dt);
   void queueStateUpdate(shared::PlayerState state);
+  void queueInputUpdate(shared::InputState inputState);
 
   bool localStateUpdated() { return _localStateQueued; }
   shared::PlayerState getUpdatedLocalState();
@@ -39,7 +40,9 @@ private:
   shared::GameConnectionConfig _config;
 
   bool _stateQueued;
+  bool _inputQueued;
   shared::PlayerState _queuedState;
+  shared::InputState _queuedInputState;
 
   bool _localStateQueued;
   shared::PlayerState _queuedLocalState;

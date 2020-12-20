@@ -24,12 +24,21 @@ void Game::run()
       if (event.type == sf::Event::KeyPressed || event.type == sf::Event::KeyReleased) {
         _player.handleKeyEvent(event);
       }
+      if (event.type == sf::Event::MouseButtonReleased || event.type == sf::Event::MouseButtonPressed ||
+          event.type == sf::Event::MouseMoved) {
+        _player.handleMouseEvent(event);
+      }
     }
 
     // Update the client
     sf::Time elapsed = clock.restart();
     _player.update(elapsed.asSeconds());
     _netClient.queueStateUpdate(_player.state());
+    
+    if (_player.inputStateChanged()) {
+      _netClient.queueInputUpdate(_player.inputState());
+    }
+
     _netClient.update(elapsed.asSeconds());
 
     // Update snapshot of world

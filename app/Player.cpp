@@ -2,8 +2,11 @@
 
 #include "FontCache.h"
 
+#include <iostream>
+
 Player::Player()
-  : _shape(sf::RectangleShape(sf::Vector2f(50.0f, 50.0f)))
+  : _inputStateChanged(false)
+  , _shape(sf::RectangleShape(sf::Vector2f(50.0f, 50.0f)))
 {
   _state._health = 100;
 
@@ -31,18 +34,37 @@ void Player::handleKeyEvent(sf::Event& event)
     }
   }
   else if (event.type == sf::Event::KeyReleased) {
-    if (event.key.code == sf::Keyboard::D) {
+    if (event.key.code == sf::Keyboard::D || event.key.code == sf::Keyboard::A) {
       _velocity._x = 0.0;
     }
-    else if (event.key.code == sf::Keyboard::A) {
-      _velocity._x = 0.0;
-    }
-    else if (event.key.code == sf::Keyboard::W) {
+    else if (event.key.code == sf::Keyboard::W || event.key.code == sf::Keyboard::S) {
       _velocity._y = 0.0;
     }
-    else if (event.key.code == sf::Keyboard::S) {
-      _velocity._y = 0.0;
+  }
+}
+
+void Player::handleMouseEvent(sf::Event& event)
+{
+  shared::InputState oldState = _inputState;
+  if (event.type == sf::Event::MouseButtonPressed) {
+    if (event.mouseButton.button == sf::Mouse::Left) {
+      _inputState._shooting = true;
+      std::cout << "Shooting!" << std::endl;
     }
+  }
+  else if (event.type == sf::Event::MouseButtonReleased) {
+    if (event.mouseButton.button == sf::Mouse::Left) {
+      _inputState._shooting = false;
+      std::cout << "Not Shooting!" << std::endl;
+    }
+  }
+  else if (event.type == sf::Event::MouseMoved) {
+    // TODO: Update our rotation based on x/y of mouse
+    //event.mouseMove.x
+  }
+
+  if (oldState != _inputState) {
+    _inputStateChanged = true;
   }
 }
 
@@ -62,6 +84,6 @@ void Player::updateState(shared::PlayerState state)
 
 void Player::draw(sf::RenderWindow& window)
 {
-  window.draw(_shape);
   window.draw(_healthText);
+  window.draw(_shape);
 }

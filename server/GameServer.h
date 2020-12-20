@@ -33,6 +33,7 @@ private:
   void processMessage(int clientIdx, yojimbo::Message*);
 
   void processStateMessage(int clientIdx, shared::PlayerStateMessage*);
+  void processInputMessage(int clientIdx, shared::InputStateMessage*);
 
   Client* getClient(int id);
 

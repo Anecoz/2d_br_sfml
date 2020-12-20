@@ -182,6 +182,9 @@ void GameServer::processMessages()
 void GameServer::processMessage(int clientIdx, yojimbo::Message* msg)
 {
   switch (msg->GetType()) {
+    case (int)shared::GameMessageType::INPUT_STATE:
+      processInputMessage(clientIdx, (shared::InputStateMessage*)msg);
+      break;
     case (int)shared::GameMessageType::PLAYER_STATE:
       processStateMessage(clientIdx, (shared::PlayerStateMessage*)msg);
       break;
@@ -202,6 +205,17 @@ void GameServer::processStateMessage(int clientIdx, shared::PlayerStateMessage* 
   auto state = client->state();
   msg->_state._health = state._health;
   client->setState(msg->_state);
+}
+
+void GameServer::processInputMessage(int clientIdx, shared::InputStateMessage* msg)
+{
+  auto client = getClient(clientIdx);
+  if (!client) {
+    std::cerr << "Received input state update for client that doesn't exist." << std::endl;
+    return;
+  }
+
+  client->setInputState(msg->_state);
 }
 
 void GameServer::clientConnected(int idx)
