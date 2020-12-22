@@ -30,6 +30,7 @@ public:
 private:
   void update(double dt);
   void processMessages();
+  void updateClientStates();
   void processMessage(int clientIdx, yojimbo::Message*);
 
   void processStateMessage(int clientIdx, shared::PlayerStateMessage*);

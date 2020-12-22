@@ -3,6 +3,9 @@
 #include <cstdint>
 #include <iostream>
 #include <yojimbo.h>
+#include <glm/glm.hpp>
+#include <glm/gtx/rotate_vector.hpp>
+#include <glm/gtx/intersect.hpp>
 
 namespace server {
 
@@ -104,6 +107,7 @@ void GameServer::update(double dt)
   _yojimboServer->AdvanceTime(_time);
   _yojimboServer->ReceivePackets();
   processMessages();
+  updateClientStates();
 
   _yojimboServer->SendPackets();
 }
@@ -136,17 +140,6 @@ void GameServer::processMessages()
     }
   }
 
-  // Send latest snapshots to connected clients.
-  for (auto& sender: _clients) {
-    for (auto& c: _clients) {
-      // We need to send the state update to the own player aswell.
-      shared::PlayerStateMessage* msg = (shared::PlayerStateMessage*)_yojimboServer->CreateMessage(c.id(), (int)shared::GameMessageType::PLAYER_STATE);
-      msg->_id = sender.id();
-      msg->_state = sender.state();
-      _yojimboServer->SendMessage(c.id(), (int)shared::GameChannel::UNRELIABLE, msg);
-    }
-  }
-
   // Send any pending welcomes to players
   std::vector<int> localWelcome;
   {
@@ -175,6 +168,44 @@ void GameServer::processMessages()
       shared::DisconnectMessage* msg = (shared::DisconnectMessage*)_yojimboServer->CreateMessage(c.id(), (int)shared::GameMessageType::DISCONNECT);
       msg->_id = idx;
       _yojimboServer->SendMessage(c.id(), (int)shared::GameChannel::RELIABLE, msg);
+    }
+  }
+}
+
+void GameServer::updateClientStates()
+{
+  // Check if any shooting client is hitting another client.
+  for (auto& c: _clients) {
+    if (c.inputState()._shooting) {
+      // Get the "shooting vector". Take up and rotate by state rotation.
+      glm::vec2 up(0.0, -1.0);
+      glm::vec2 dir = glm::rotate(up, float(glm::radians(c.state()._rotation)));
+      glm::vec2 orig(c.state()._coord._x, c.state()._coord._y);
+
+      for (auto& other: _clients) {
+        if (other.id() == c.id()) continue;
+
+        glm::vec2 otherCenter(other.state()._coord._x, other.state()._coord._y);
+        glm::vec2 iPos, iNormal;
+        if (glm::intersectRaySphere(orig, dir, otherCenter, 25.0f, iPos, iNormal)) {
+          std::cout << "Holy moly! We hit something!" << std::endl;
+          auto state = other.state();
+          state._health = state._health - 1.0;
+          other.setState(state);
+          break;
+        }
+      }
+    }
+  }
+
+  // Send latest snapshots to connected clients.
+  for (auto& sender: _clients) {
+    for (auto& c: _clients) {
+      // We need to send the state update to the own player aswell.
+      shared::PlayerStateMessage* msg = (shared::PlayerStateMessage*)_yojimboServer->CreateMessage(c.id(), (int)shared::GameMessageType::PLAYER_STATE);
+      msg->_id = sender.id();
+      msg->_state = sender.state();
+      _yojimboServer->SendMessage(c.id(), (int)shared::GameChannel::UNRELIABLE, msg);
     }
   }
 }
