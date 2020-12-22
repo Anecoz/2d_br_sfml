@@ -191,6 +191,7 @@ void GameServer::updateClientStates()
           std::cout << "Holy moly! We hit something!" << std::endl;
           auto state = other.state();
           state._health = state._health - 1.0;
+          if (state._health < -1.0) state._health = -1.0;
           other.setState(state);
           break;
         }
