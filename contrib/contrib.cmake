@@ -16,3 +16,11 @@ if (WIN32)
 else()
   message(FATAL "Contribs only exist for Win32, aborting!")
 endif()
+
+# Shared on all platforms
+set(glm_DIR ${CMAKE_SOURCE_DIR}/contrib/glm-0.9.9.8/glm/cmake/glm)
+find_package(glm)
+
+if (NOT glm_FOUND)
+  message(FATAL "glm not found!")
+endif()
