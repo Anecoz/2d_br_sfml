@@ -20,6 +20,7 @@ struct InputState
 struct PlayerState
 {
   int _health = -1;
+  double _rotation = 0.0;
   Coordinate _coord;
 };
 

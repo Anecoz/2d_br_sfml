@@ -65,6 +65,7 @@ public:
   bool Serialize(Stream& stream) {
     serialize_double(stream, _state._coord._x);
     serialize_double(stream, _state._coord._y);
+    serialize_double(stream, _state._rotation);
     serialize_int(stream, _id, -1, 64);
     serialize_int(stream, _state._health, -1, 100);
     return true;
