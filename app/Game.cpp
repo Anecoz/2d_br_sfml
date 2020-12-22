@@ -1,5 +1,7 @@
 #include "Game.h"
 
+#include <SFML/Window/Mouse.hpp>
+
 Game::Game()
   : _window(sf::VideoMode(1280, 720), "2D BR")
   , _netClient("127.0.0.1:6000")
@@ -32,7 +34,9 @@ void Game::run()
 
     // Update the client
     sf::Time elapsed = clock.restart();
-    _player.update(elapsed.asSeconds());
+    auto mousePos = sf::Mouse::getPosition(_window);
+
+    _player.update(elapsed.asSeconds(), mousePos.x, mousePos.y);
     _netClient.queueStateUpdate(_player.state());
     
     if (_player.inputStateChanged()) {

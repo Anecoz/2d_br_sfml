@@ -63,19 +63,7 @@ void Player::handleMouseEvent(sf::Event& event)
     }
   }
   else if (event.type == sf::Event::MouseMoved) {
-    // TODO: Update our rotation based on x/y of mouse. event.mouseMove.x/y are pixel coordinates of mouse
-    glm::vec2 up(0.0, -1.0);
-    glm::vec2 pToM(
-      event.mouseMove.x - _state._coord._x,
-      event.mouseMove.y - _state._coord._y);
-    pToM = glm::normalize(pToM);
-    double angle = glm::degrees(glm::angle(up, pToM));
-
-    // Go from [0, 180] to [0, 360]
-    if (event.mouseMove.x < _state._coord._x) {
-      angle = 360.0 - angle;
-    }
-    _state._rotation = angle;
+    // Moved to update() method.
   }
 
   if (oldState != _inputState) {
@@ -83,8 +71,22 @@ void Player::handleMouseEvent(sf::Event& event)
   }
 }
 
-void Player::update(double dt)
+void Player::update(double dt, int mX, int mY)
 {
+  // Handle rotation based on mouse.
+  glm::vec2 up(0.0, -1.0);
+  glm::vec2 pToM(
+    mX - _state._coord._x,
+    mY - _state._coord._y);
+  pToM = glm::normalize(pToM);
+  double angle = glm::degrees(glm::angle(up, pToM));
+
+  // Go from [0, 180] to [0, 360]
+  if (mX < _state._coord._x) {
+    angle = 360.0 - angle;
+  }
+  _state._rotation = angle;
+
   _state._coord._x = _state._coord._x + _velocity._x * dt;
   _state._coord._y = _state._coord._y + _velocity._y * dt;
   _shape.setPosition(sf::Vector2f((float)_state._coord._x, (float)_state._coord._y));

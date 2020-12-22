@@ -14,7 +14,7 @@ public:
   void handleKeyEvent(sf::Event& keyEvent);
   void handleMouseEvent(sf::Event& mouseEvent);
 
-  void update(double dt);
+  void update(double dt, int mX, int mY);
   void draw(sf::RenderWindow& window);
 
   void updateState(shared::PlayerState state);
