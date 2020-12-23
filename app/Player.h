@@ -24,7 +24,7 @@ public:
   shared::InputState inputState() { _inputStateChanged = false; return _inputState; }
 
 private:
-  const double _speed = 100.0;
+  const double _speed = 500.0;
 
   shared::Velocity _velocity;
   shared::PlayerState _state;
