@@ -8,10 +8,11 @@ if (WIN32)
   endif()
 
   # yojimbo
+  set(YOJIMBO_VERSION "v1.2.1")
   add_library(yojimbo STATIC IMPORTED REQUIRED)
-  set_target_properties(yojimbo PROPERTIES IMPORTED_LOCATION_DEBUG ${CMAKE_CURRENT_LIST_DIR}/win/yojimbo/lib/Debug/yojimbo.lib)
-  set_target_properties(yojimbo PROPERTIES IMPORTED_LOCATION_RELEASE ${CMAKE_CURRENT_LIST_DIR}/win/yojimbo/lib/Release/yojimbo.lib)
-  target_include_directories(yojimbo INTERFACE ${CMAKE_CURRENT_LIST_DIR}/win/yojimbo/include)
+  set_target_properties(yojimbo PROPERTIES IMPORTED_LOCATION_DEBUG ${CMAKE_CURRENT_LIST_DIR}/win/yojimbo/${YOJIMBO_VERSION}/lib/Debug/yojimbo.lib)
+  set_target_properties(yojimbo PROPERTIES IMPORTED_LOCATION_RELEASE ${CMAKE_CURRENT_LIST_DIR}/win/yojimbo/${YOJIMBO_VERSION}/lib/Release/yojimbo.lib)
+  target_include_directories(yojimbo INTERFACE ${CMAKE_CURRENT_LIST_DIR}/win/yojimbo/${YOJIMBO_VERSION}/include)
 
 else()
   message(FATAL "Contribs only exist for Win32, aborting!")
